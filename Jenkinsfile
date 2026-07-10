@@ -2,6 +2,10 @@ pipeline {
 
     agent any
 
+    tools {
+        maven 'Maven3'
+    }
+
     environment {
         IMAGE_NAME = "springboot-app"
         COMPOSE_FILE = "docker-compose.yml"
@@ -11,30 +15,28 @@ pipeline {
 
         stage('Checkout') {
             steps {
+                cleanWs()
+
                 git branch: 'main',
                     url: 'https://github.com/DeepikaCAshok/Employee-Management-Portal.git'
             }
         }
 
-
         stage('Build Application') {
             steps {
                 sh '''
-                chmod +x mvnw || true
-                ./mvnw clean package -DskipTests
+                mvn clean package -DskipTests
                 '''
             }
         }
-
 
         stage('Build Docker Image') {
             steps {
                 sh '''
-                docker build -t ${IMAGE_NAME} .
+                docker build -t ${IMAGE_NAME}:latest .
                 '''
             }
         }
-
 
         stage('Deploy') {
             steps {
@@ -43,41 +45,39 @@ pipeline {
 
                 docker-compose -f ${COMPOSE_FILE} down --remove-orphans || true
 
-                echo "Removing old containers if exist..."
+                echo "Removing old containers..."
 
-                docker rm -f mysql-container springboot-container || true
+                docker rm -f springboot-container mysql-container || true
 
-                echo "Starting application..."
+                echo "Building and starting containers..."
 
                 docker-compose -f ${COMPOSE_FILE} up -d --build
                 '''
             }
         }
 
-
         stage('Wait for Application') {
             steps {
                 sh '''
-                echo "Waiting for Spring Boot..."
+                echo "Waiting for Spring Boot to start..."
 
-                sleep 20
+                sleep 30
 
                 docker ps
                 '''
             }
         }
 
-
         stage('Test') {
             steps {
                 sh '''
-                curl -f http://localhost:8083/employees || exit 1
+                curl --retry 10 --retry-delay 5 --retry-connrefused \
+                http://localhost:8083/employees
                 '''
             }
         }
 
     }
-
 
     post {
 
@@ -87,9 +87,15 @@ pipeline {
 
         failure {
             echo "Deployment failed"
-            sh 'docker-compose logs || true'
+
+            sh '''
+            docker ps -a || true
+            docker-compose -f ${COMPOSE_FILE} logs || true
+            '''
         }
 
+        always {
+            cleanWs()
+        }
     }
-
 }
