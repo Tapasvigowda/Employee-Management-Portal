@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "springboot-app"
-        COMPOSE_FILE = "docker-compose.yml"
+        COMPOSE_FILE = "docker compose.yml"
     }
 
     stages {
@@ -18,7 +18,7 @@ pipeline {
                 cleanWs()
 
                 git branch: 'main',
-                    url: 'https://github.com/DeepikaCAshok/Employee-Management-Portal.git'
+                    url: 'https://github.com/Tapasvigowda/Employee-Management-Portal.git'
             }
         }
 
