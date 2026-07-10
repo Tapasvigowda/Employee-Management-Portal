@@ -47,7 +47,7 @@ pipeline {
                 docker rm -f springboot-container mysql-container || true
 
                 echo "Building and starting containers..."
-                docker compose -f ${COMPOSE_FILE} up -d --build
+                docker compose -f ${COMPOSE_FILE} up -d
                 '''
             }
         }
