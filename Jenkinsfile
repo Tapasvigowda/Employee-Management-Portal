@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "springboot-app"
-        COMPOSE_FILE = "docker compose.yml"
+        COMPOSE_FILE = "docker-compose.yml"
     }
 
     stages {
@@ -16,7 +16,6 @@ pipeline {
         stage('Checkout') {
             steps {
                 cleanWs()
-
                 git branch: 'main',
                     url: 'https://github.com/Tapasvigowda/Employee-Management-Portal.git'
             }
@@ -42,16 +41,13 @@ pipeline {
             steps {
                 sh '''
                 echo "Stopping old containers..."
-
-                docker-compose -f ${COMPOSE_FILE} down --remove-orphans || true
+                docker compose -f ${COMPOSE_FILE} down --remove-orphans || true
 
                 echo "Removing old containers..."
-
                 docker rm -f springboot-container mysql-container || true
 
                 echo "Building and starting containers..."
-
-                docker-compose -f ${COMPOSE_FILE} up -d --build
+                docker compose -f ${COMPOSE_FILE} up -d --build
                 '''
             }
         }
@@ -60,9 +56,7 @@ pipeline {
             steps {
                 sh '''
                 echo "Waiting for Spring Boot to start..."
-
                 sleep 30
-
                 docker ps
                 '''
             }
@@ -87,10 +81,9 @@ pipeline {
 
         failure {
             echo "Deployment failed"
-
             sh '''
             docker ps -a || true
-            docker-compose -f ${COMPOSE_FILE} logs || true
+            docker compose -f ${COMPOSE_FILE} logs || true
             '''
         }
 
